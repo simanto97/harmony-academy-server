@@ -89,11 +89,27 @@ async function run() {
       res.send(result);
     });
 
-    // clasess related apis
+    // classes related apis
     app.get("/classes", async (req, res) => {
-      const result = await classesCollection.find().toArray();
+      let query = {};
+      if (req.query?.email) {
+        query = { email: req.query.email };
+      }
+      const result = await classesCollection.find(query).toArray();
       res.send(result);
     });
+
+    // app.put("/classes/:id", async (req, res) => {
+    //   const id = req.params.id;
+    //   const body = req.body;
+    //   const query = { _id: new ObjectId(id) };
+    //   const options = { upsert: true };
+    //   const updatedDoc = {
+    //     $set: {
+    //       plot: `A harvest of random numbers, such as: ${Math.random()}`,
+    //     },
+    //   };
+    // });
 
     // carts related apis
 
