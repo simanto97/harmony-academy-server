@@ -28,22 +28,60 @@ async function run() {
     const instructorsCollection = client
       .db("harmonyDB")
       .collection("instructors");
+    const usersCollection = client.db("harmonyDB").collection("users");
     const classesCollection = client.db("harmonyDB").collection("classes");
     const cartsCollection = client.db("harmonyDB").collection("carts");
+    // users related apis
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await usersCollection.findOne(query);
+      console.log("existing user", existingUser);
+      if (existingUser) {
+        return res.send({ message: "user already exists" });
+      }
+      const result = await usersCollection.insertOne(user);
+      res.send(result);
+    });
+    app.get("/users", async (req, res) => {
+      let query = {};
+      if (req.query?.email) {
+        query = { email: req.query.email };
+      }
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
 
+    // instructors related apis
     app.get("/instructors", async (req, res) => {
       const result = await instructorsCollection.find().toArray();
       res.send(result);
     });
+
+    // clasess related apis
     app.get("/classes", async (req, res) => {
       const result = await classesCollection.find().toArray();
       res.send(result);
     });
-    app.post("/carts", async (req, res) => {
+
+    // carts related apis
+
+    app.post("/dashboard/carts", async (req, res) => {
       const item = req.body;
       const result = await cartsCollection.insertOne(item);
       res.send(result);
     });
+
+    app.get("/dashboard/carts", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send([]);
+      }
+      const query = { email: email };
+      const result = await cartsCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("DB connected!✅");
