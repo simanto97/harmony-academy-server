@@ -99,17 +99,38 @@ async function run() {
       res.send(result);
     });
 
-    // app.put("/classes/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const body = req.body;
-    //   const query = { _id: new ObjectId(id) };
-    //   const options = { upsert: true };
-    //   const updatedDoc = {
-    //     $set: {
-    //       plot: `A harvest of random numbers, such as: ${Math.random()}`,
-    //     },
-    //   };
-    // });
+    app.post("/classes", async (req, res) => {
+      const classData = req.body;
+      classData.price = parseFloat(classData.price);
+      classData.availableSeats = parseFloat(classData.availableSeats);
+      const result = await classesCollection.insertOne(classData);
+      res.send(result);
+    });
+
+    app.get("/classes/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await classesCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.patch("/classes/:id", async (req, res) => {
+      const id = req.params.id;
+      const body = req.body;
+      body.price = parseFloat(req.body.price);
+      body.availableSeats = parseInt(req.body.availableSeats);
+      const query = { _id: new ObjectId(id) };
+      const classData = {
+        $set: {
+          image: body.image,
+          name: body.name,
+          price: body.price,
+          availableSeats: body.availableSeats,
+        },
+      };
+      const result = await classesCollection.updateOne(query, classData);
+      res.send(result);
+    });
 
     // carts related apis
 
