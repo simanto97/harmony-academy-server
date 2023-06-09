@@ -95,6 +95,9 @@ async function run() {
       if (req.query?.email) {
         query = { email: req.query.email };
       }
+      if (req.query?.approve) {
+        query = { status: "approved" };
+      }
       const result = await classesCollection.find(query).toArray();
       res.send(result);
     });
@@ -129,6 +132,16 @@ async function run() {
         },
       };
       const result = await classesCollection.updateOne(query, classData);
+      res.send(result);
+    });
+
+    app.patch("/classes/status/:id", async (req, res) => {
+      const id = req.params.id;
+      const body = req.body.status;
+      console.log(body);
+      const query = { _id: new ObjectId(id) };
+      const updatedDoc = { $set: { status: body } };
+      const result = await classesCollection.updateOne(query, updatedDoc);
       res.send(result);
     });
 
