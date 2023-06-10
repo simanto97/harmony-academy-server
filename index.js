@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
@@ -7,6 +8,29 @@ const port = process.env.PORT || 5000;
 // middleware
 app.use(express.json());
 app.use(cors());
+
+// verify jwt
+const verifyJWT = (req, res, next) => {
+  const authorization = req.headers.authorization;
+  if (!authorization) {
+    return res
+      .status(401)
+      .send({ error: true, message: "unauthorized access" });
+  }
+  // bearer token
+
+  const token = authorization.split(" ")[1];
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res
+        .status(401)
+        .send({ error: true, message: "unauthorized access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+};
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.vqdm4bk.mongodb.net/?retryWrites=true&w=majority`;
@@ -31,12 +55,20 @@ async function run() {
     const usersCollection = client.db("harmonyDB").collection("users");
     const classesCollection = client.db("harmonyDB").collection("classes");
     const cartsCollection = client.db("harmonyDB").collection("carts");
+
+    // jwt related apis
+    app.post("/jwt", (req, res) => {
+      const email = req.body;
+      const token = jwt.sign(email, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
     // users related apis
     app.post("/users", async (req, res) => {
       const user = req.body;
       const query = { email: user.email };
       const existingUser = await usersCollection.findOne(query);
-      console.log("existing user", existingUser);
       if (existingUser) {
         return res.send({ message: "user already exists" });
       }
@@ -138,7 +170,6 @@ async function run() {
     app.patch("/classes/status/:id", async (req, res) => {
       const id = req.params.id;
       const body = req.body.status;
-      console.log(body);
       const query = { _id: new ObjectId(id) };
       const updatedDoc = { $set: { status: body } };
       const result = await classesCollection.updateOne(query, updatedDoc);
@@ -147,8 +178,14 @@ async function run() {
 
     // carts related apis
 
-    app.get("/dashboard/carts", async (req, res) => {
+    app.get("/dashboard/carts", verifyJWT, async (req, res) => {
+      const decodedEmail = req.decoded.email;
       const email = req.query.email;
+      if (email !== decodedEmail) {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden access" });
+      }
       if (!email) {
         res.send([]);
       }
