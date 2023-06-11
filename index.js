@@ -85,11 +85,8 @@ async function run() {
     app.post("/payment", async (req, res) => {
       const paymentInfo = req.body;
       const insertResult = await paymentCollection.insertOne(paymentInfo);
-
-      console.log(paymentInfo);
       const filter = { _id: new ObjectId(paymentInfo.item._id) };
       const foundData = await classesCollection.findOne(filter);
-      // console.log(86, foundData);
       if (foundData.availableSeats <= 0) {
         return res.send({
           insertResult: 0,
@@ -101,9 +98,7 @@ async function run() {
         });
       }
       foundData.availableSeats -= 1;
-
       foundData.enrolledStudents += 1;
-
       const updateDoc = {
         $set: {
           availableSeats: foundData.availableSeats,
@@ -134,6 +129,7 @@ async function run() {
       const result = await paymentCollection.find(query).toArray();
       res.send(result);
     });
+
     // enrolled class api
     app.get("/enrolled-classes/:email", async (req, res) => {
       const email = req.params.email;
@@ -265,7 +261,6 @@ async function run() {
     });
 
     // carts related apis
-
     app.get("/dashboard/carts", verifyJWT, async (req, res) => {
       const decodedEmail = req.decoded.email;
       const email = req.query.email;
