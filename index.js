@@ -54,6 +54,7 @@ async function run() {
     const classesCollection = client.db("harmonyDB").collection("classes");
     const cartsCollection = client.db("harmonyDB").collection("carts");
     const paymentCollection = client.db("harmonyDB").collection("payments");
+    const reviewsCollection = client.db("harmonyDB").collection("reviews");
     const enrolledClassesCollection = client
       .db("harmonyDB")
       .collection("enrolledClasses");
@@ -195,7 +196,30 @@ async function run() {
       res.send(result);
     });
 
+    // instructors related apis
+
+    app.get("/popular-instructors", async (req, res) => {
+      const query = { role: "instructor" };
+      const result = await usersCollection.find(query).limit(6).toArray();
+      res.send(result);
+    });
+
+    // reviews related apis
+    app.get("/reviews", async (req, res) => {
+      const result = await reviewsCollection.find().toArray();
+      res.send(result);
+    });
+
     // classes related apis
+    app.get("/popular-classes", async (req, res) => {
+      const result = await classesCollection
+        .find()
+        .sort({ enrolledStudents: -1 })
+        .limit(6)
+        .toArray();
+      res.send(result);
+    });
+
     app.get("/classes", async (req, res) => {
       let query = {};
       if (req.query?.email) {
